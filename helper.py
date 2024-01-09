@@ -1,5 +1,6 @@
 from urlextract import URLExtract
 from wordcloud import WordCloud
+from collections import Counter
 
 def convert_am_pm_to_24_hour(time_str):
     # Split the time string into hours, minutes, AM/PM
@@ -40,7 +41,7 @@ def get_busiest_user(df):
 def get_user_percent(df):
     return round((df['user'].value_counts()/df.shape[0])*100,2).reset_index().rename(columns={'count':'percent'})
 
-def get_world_could(selected_user, df):
+def remove_stopwords(df):
     stop_words = ''
     with open('/home/vostro/Desktop/whatsapp_chat_analysis/stop_hinglish.txt','r') as f:
         stop_words = f.read()
@@ -50,11 +51,25 @@ def get_world_could(selected_user, df):
         for word in words:
             if word.lower() not in stop_words:
                 temp += word+" "
-    print(temp)
+    return temp
+
+
+def get_world_could(selected_user, df):
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
     return WordCloud(width=1200, height=600,
                           background_color='white',
-                            stopwords=stop_words,
-                          min_font_size=10).generate(temp)
+                          min_font_size=10).generate(remove_stopwords(df))
 
+def get_most_comman_word(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+
+    text = remove_stopwords(df).split()
+    word =  Counter(text).most_common(20)
+    x = []
+    y = []
+    for i in word:
+        x.append(i[0])
+        y.append(i[1])
+    return x,y

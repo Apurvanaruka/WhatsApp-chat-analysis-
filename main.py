@@ -5,7 +5,7 @@ from helper import *
 import matplotlib.pyplot as plt
 
 st.sidebar.title('whatsapp chat analysis')
-df = pd.DataFrame();
+df = pd.DataFrame()
 
 uploaded_file = st.sidebar.file_uploader("Choose a file")
 if uploaded_file is not None:
@@ -18,6 +18,7 @@ if uploaded_file is not None:
     selected_user = st.sidebar.selectbox(label='show Analysis wrt ',options=user_list)
 
     if st.sidebar.button("Show analysis"):
+        # satats of the group
         col1, col2, col3, col4 = st.columns(4)
         message_count, word_count, media_count,Links_count = fetch_stats(selected_user, df)
 
@@ -35,6 +36,7 @@ if uploaded_file is not None:
             st.header('Links Count')
             st.title(Links_count)
 
+        # Most Busiest person in the group
         if selected_user == 'Overall':
             st.title('Most Busiest User')
             col1, col2 = st.columns(2)
@@ -50,9 +52,17 @@ if uploaded_file is not None:
                 x = get_user_percent(df)
                 st.dataframe(x)
 
+        # word cloud 
         wordcloud = get_world_could(selected_user,df)
-        # plot the WordCloud image
         fig, ax = plt.subplots()
         ax.imshow(wordcloud)
         plt.axis("off")
+        st.pyplot(fig)
+
+        # find most occurance word in the chat
+        st.title('most comman words')
+        x,y = get_most_comman_word(selected_user,df)    
+        fig, ax = plt.subplots()
+        ax.barh(x,y,)
+        plt.xticks(rotation='vertical')
         st.pyplot(fig)
