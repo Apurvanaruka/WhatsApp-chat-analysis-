@@ -41,9 +41,20 @@ def get_user_percent(df):
     return round((df['user'].value_counts()/df.shape[0])*100,2).reset_index().rename(columns={'count':'percent'})
 
 def get_world_could(selected_user, df):
+    stop_words = ''
+    with open('/home/vostro/Desktop/whatsapp_chat_analysis/stop_hinglish.txt','r') as f:
+        stop_words = f.read()
+
+    temp = ""
+    for words in df['messages'].str.split():
+        for word in words:
+            if word.lower() not in stop_words:
+                temp += word+" "
+    print(temp)
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
     return WordCloud(width=1200, height=600,
                           background_color='white',
-                          min_font_size=10).generate(df['messages'].str.cat(sep=" "))
+                            stopwords=stop_words,
+                          min_font_size=10).generate(temp)
 
