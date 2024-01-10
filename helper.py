@@ -1,6 +1,9 @@
 from urlextract import URLExtract
 from wordcloud import WordCloud
 from collections import Counter
+import emoji
+import pandas as pd
+import datetime
 
 def convert_am_pm_to_24_hour(time_str):
     # Split the time string into hours, minutes, AM/PM
@@ -73,3 +76,35 @@ def get_most_comman_word(selected_user,df):
         x.append(i[0])
         y.append(i[1])
     return x,y
+
+def get_emojis(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+
+    emojis = []
+    for word in df['messages'].str.split(''):   
+        for i in word:
+            if emoji.is_emoji(i):
+                emojis.extend(i)
+    return pd.DataFrame(Counter(emojis).most_common(),columns=['emoji','count'])
+
+
+def get_month_timeline(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    month_timeline_df = df.groupby(['year','month']).count()['messages'].reset_index()
+    month_timeline_df
+    month_year = []
+    for i in range(month_timeline_df.shape[0]):
+        month_datetime = datetime.date(month_timeline_df['year'][i], month_timeline_df['month'][i],1)
+        month_name = month_datetime.strftime("%B")
+        month_year.append(month_name +"-"+str(month_timeline_df['year'][i]))
+
+    month_timeline_df['month_year'] = month_year
+    return month_timeline_df.drop(['year','month'],axis=1)
+
+
+def get_day_timeline(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    return df.groupby(['hour']).count()['messages'].reset_index()
