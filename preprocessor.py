@@ -14,7 +14,14 @@ def Preprocessing(text_data):
     df['day'] = df['date'].dt.day
     df['hour'] = [time_str.split(":")[0] for time_str in df['time']]
     df['minutes'] = [time_str.split(":")[1] for time_str in df['time']]
-    df = df.drop('date',axis=1)
     df = df.drop('time',axis=1)
+    period = []
+    for hour in df['hour']:
+        if hour == '23':
+            period.append(hour+"-""00")
+        else:
+            period.append(hour+"-"+str(int(hour)+1))
+    df['period'] = period
+    df['day_name'] = df['date'].dt.day_name()
     return df
 

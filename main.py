@@ -3,6 +3,7 @@ import streamlit as st
 from preprocessor import Preprocessing
 from helper import *
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 st.sidebar.title('whatsapp chat analysis')
 df = pd.DataFrame()
@@ -11,7 +12,6 @@ uploaded_file = st.sidebar.file_uploader("Choose a file")
 if uploaded_file is not None:
     text_data = uploaded_file.getvalue().decode('utf-8')
     df = Preprocessing(text_data)
-    st.dataframe(df)
 
     user_list = ['Overall']
     user_list.extend(df['user'].unique())
@@ -36,20 +36,29 @@ if uploaded_file is not None:
             st.header('Links Count')
             st.title(Links_count)
 
+        st.title('Activities')
         col1 , col2 = st.columns(2)
-        
         with col1:
             month_timeline_df = get_month_timeline(selected_user,df)
-            # st.dataframe(month_timeline_df)
+            st.header('monthly timeline')
             fig, ax = plt.subplots()
             ax.plot(month_timeline_df['month_year'],month_timeline_df['messages'])
-            plt.xticks(rotation='vertical')
+            plt.xticks(rotation=45)
             st.pyplot(fig)
         with col2:
-            day_timeline = get_day_timeline(selected_user,df)
-            fig, ax = plt.subplots()
-            ax.plot(day_timeline['hour'],day_timeline['messages'])
+            weekly_timeline = get_weekly_timeline(selected_user,df)
+            st.header('weekly timeline')
+            fig,ax = plt.subplots()
+            ax.bar(weekly_timeline['date'],weekly_timeline['count'])
+            plt.xticks(rotation=45)
             st.pyplot(fig)
+
+        daily_timeline = get_daily_timeline(selected_user,df)
+        st.header('daily timeline')
+        fig,ax = plt.subplots(figsize=(10,5))
+        ax = sns.heatmap(daily_timeline)
+        plt.xticks(rotation=45)
+        st.pyplot(fig)
 
 
         # Most Busiest person in the group
@@ -61,7 +70,7 @@ if uploaded_file is not None:
                 x = get_busiest_user(df)
                 fig , ax = plt.subplots()
                 plt.title('Top 5 users')
-                plt.xticks(rotation='vertical')
+                plt.xticks(rotation=45)     
                 ax.bar(x.index, x.values,color='red')
                 st.pyplot(fig)
             with col2:
@@ -80,7 +89,7 @@ if uploaded_file is not None:
         x,y = get_most_comman_word(selected_user,df)    
         fig, ax = plt.subplots()
         ax.barh(x,y)
-        plt.xticks(rotation='vertical')
+        plt.xticks(rotation=45)
         st.pyplot(fig)
 
         st.title('Emojis Analysis')

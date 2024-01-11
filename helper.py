@@ -104,7 +104,16 @@ def get_month_timeline(selected_user,df):
     return month_timeline_df.drop(['year','month'],axis=1)
 
 
-def get_day_timeline(selected_user,df):
+def get_daily_timeline(selected_user,df):
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
-    return df.groupby(['hour']).count()['messages'].reset_index()
+
+
+    return df.pivot_table(index='day_name',columns='period',values='messages',aggfunc='count').fillna(0)
+
+
+def get_weekly_timeline(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    return df['date'].dt.day_name().value_counts(sort=False).reset_index()
+
