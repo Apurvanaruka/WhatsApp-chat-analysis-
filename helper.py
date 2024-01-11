@@ -46,7 +46,7 @@ def get_user_percent(df):
 
 def remove_stopwords(df):
     stop_words = ''
-    with open('/home/vostro/Desktop/whatsapp_chat_analysis/stop_hinglish.txt','r') as f:
+    with open('stop_hinglish.txt','r') as f:
         stop_words = f.read()
 
     temp = ""
