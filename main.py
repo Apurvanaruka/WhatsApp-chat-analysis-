@@ -89,7 +89,6 @@ if uploaded_file is not None:
         x,y = get_most_comman_word(selected_user,df)    
         fig, ax = plt.subplots()
         ax.barh(x,y)
-        plt.xticks(rotation=45)
         st.pyplot(fig)
 
         st.title('Emojis Analysis')
