@@ -4,7 +4,7 @@ from helper import  convert_am_pm_to_24_hour
 
 
 def Preprocessing(text_data):
-    pattern = "(\d{1,2}/\d{1,2}/\d{2}), (\d{1,2}:\d{2}\s?[APMapm]+) - (\S+ \S+): (.+)"
+    pattern = "(\d{1,2}/\d{1,2}/\d{2}), (\d{1,2}:\d{2}\s?[APMapm]+) - (.+): (.+)"
     text_list = re.findall(pattern,text_data)
     df = pd.DataFrame(text_list, columns=['date','time','user','messages'])
     df['date'] = pd.to_datetime(df['date'],format="%m/%d/%y")
