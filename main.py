@@ -19,7 +19,7 @@ if uploaded_file is not None:
 
     if st.sidebar.button("Show analysis"):
         # satats of the group
-        st.title('Top statas')
+        st.title('Top Statistics')
         col1, col2, col3, col4 = st.columns(4)
         message_count, word_count, media_count,Links_count = fetch_stats(selected_user, df)
         with col1:
@@ -27,7 +27,7 @@ if uploaded_file is not None:
             st.title(message_count)
 
         with col2:
-            st.header("words Count")
+            st.header("Words Count")
             st.title(word_count)
         with col3:
             st.header('Media Count')
@@ -40,14 +40,14 @@ if uploaded_file is not None:
         col1 , col2 = st.columns(2)
         with col1:
             month_timeline_df = get_month_timeline(selected_user,df)
-            st.header('monthly timeline')
+            st.header('Monthly timeline')
             fig, ax = plt.subplots()
             ax.plot(month_timeline_df['month_year'],month_timeline_df['messages'])
             plt.xticks(rotation=45)
             st.pyplot(fig)
         with col2:
             weekly_timeline = get_weekly_timeline(selected_user,df)
-            st.header('weekly timeline')
+            st.header('Weekly timeline')
             fig,ax = plt.subplots()
             ax.bar(weekly_timeline['date'],weekly_timeline['count'])
             plt.xticks(rotation=45)
@@ -78,6 +78,7 @@ if uploaded_file is not None:
                 st.dataframe(x)
 
         # word cloud 
+        st.title('Word cloud')
         wordcloud = get_world_could(selected_user,df)
         fig, ax = plt.subplots()
         ax.imshow(wordcloud)
@@ -85,7 +86,7 @@ if uploaded_file is not None:
         st.pyplot(fig)
 
         # find most occurance word in the chat
-        st.title('most comman words')
+        st.header('Most common words')
         x,y = get_most_comman_word(selected_user,df)    
         fig, ax = plt.subplots()
         ax.barh(x,y)
