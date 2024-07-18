@@ -1,11 +1,11 @@
 import pandas as pd
 import re
 from helper import  convert_am_pm_to_24_hour
-
+import streamlit as st
 
 def Preprocessing(text_data):
-    pattern = "(\d{1,2}/\d{1,2}/\d{2}), (\d{1,2}:\d{2}\s?[APMapm]+) - (.+): (.+)"
-    text_list = re.findall(pattern,text_data)
+    pattern = r'(\d+/\d+/\d+), (\d+:\d+) - ([^:]+): (.+)'
+    text_list = re.findall(pattern, text_data)
     df = pd.DataFrame(text_list, columns=['date','time','user','messages'])
     df['date'] = pd.to_datetime(df['date'],format="%m/%d/%y")
     df['time'] = [convert_am_pm_to_24_hour(time_str) for time_str in df['time']]
@@ -24,4 +24,5 @@ def Preprocessing(text_data):
     df['period'] = period
     df['day_name'] = df['date'].dt.day_name()
     return df
+
 
