@@ -4,21 +4,24 @@ from collections import Counter
 import emoji
 import pandas as pd
 import datetime
+import re
+from urllib.parse import urlparse
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from config import SENTIMENT_THRESHOLD_POSITIVE, SENTIMENT_THRESHOLD_NEGATIVE
 
 def convert_am_pm_to_24_hour(time_str):
-    # Split the time string into hours, minutes, AM/PM
-    time_parts = time_str.split(':')
-    hours = int(time_parts[0])
-    minutes = int(time_parts[1][:2])  # Extract only the first two characters for minutes
-    period = time_parts[1][2:].strip()
+    match = re.match(r'(\d+):(\d+)\s*([APap][Mm])', time_str)
+    if not match:
+        return time_str
+    hours = int(match.group(1))
+    minutes = int(match.group(2))
+    period = match.group(3).lower()
 
-    # Convert to 24-hour format
-    if period.lower() == 'pm' and hours != 12:
+    if period == 'pm' and hours != 12:
         hours += 12
-    elif period.lower() == 'am' and hours == 12:
+    elif period == 'am' and hours == 12:
         hours = 0
 
-    # Format the result
     return f"{hours:02d}:{minutes:02d}"
 
 
@@ -45,16 +48,15 @@ def get_user_percent(df):
     return round((df['user'].value_counts()/df.shape[0])*100,2).reset_index().rename(columns={'count':'percent'})
 
 def remove_stopwords(df):
-    stop_words = ''
     with open('stop_hinglish.txt','r') as f:
-        stop_words = f.read()
+        stop_words = set(f.read().split())
 
-    temp = ""
+    temp = []
     for words in df['messages'].str.split():
         for word in words:
             if word.lower() not in stop_words:
-                temp += word+" "
-    return temp
+                temp.append(word)
+    return ' '.join(temp)
 
 
 def get_world_could(selected_user, df):
@@ -82,10 +84,10 @@ def get_emojis(selected_user,df):
         df = df[df['user'] == selected_user]
 
     emojis = []
-    for word in df['messages'].str.split(''):   
-        for i in word:
-            if emoji.is_emoji(i):
-                emojis.extend(i)
+    for message in df['messages']:
+        for char in str(message):
+            if emoji.is_emoji(char):
+                emojis.append(char)
     return pd.DataFrame(Counter(emojis).most_common(),columns=['emoji','count'])
 
 
@@ -116,4 +118,96 @@ def get_weekly_timeline(selected_user,df):
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
     return df['date'].dt.day_name().value_counts(sort=False).reset_index()
+
+def get_hourly_activity(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    return df['hour'].value_counts().sort_index()
+
+def get_day_of_week_distribution(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    day_order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+    return df['day_name'].value_counts().reindex(day_order).fillna(0).astype(int)
+
+def get_message_length_stats(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    return df['messages'].str.len()
+
+def get_media_text_ratio(selected_user,df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    media = (df['messages'] == '<Media omitted>').sum()
+    total = df.shape[0]
+    return media, total - media
+
+def get_top_domains(selected_user,df):
+    extractor = URLExtract()
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    domains = []
+    for message in df['messages']:
+        for url in extractor.find_urls(message):
+            domain = urlparse(url).netloc
+            if domain:
+                domains.append(domain)
+    return Counter(domains).most_common(10)
+
+def get_conversation_starter(df):
+    return df.groupby('date').first()['user'].value_counts().head(10)
+
+_sia = SentimentIntensityAnalyzer()
+
+def analyze_sentiment(text):
+    if not text or text == '<Media omitted>':
+        return 'neutral', 0.0
+    scores = _sia.polarity_scores(str(text))
+    compound = scores['compound']
+    if compound >= SENTIMENT_THRESHOLD_POSITIVE:
+        label = 'positive'
+    elif compound <= SENTIMENT_THRESHOLD_NEGATIVE:
+        label = 'negative'
+    else:
+        label = 'neutral'
+    return label, compound
+
+def get_sentiment_stats(selected_user, df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    labels, scores = zip(*df['messages'].apply(analyze_sentiment))
+    return list(labels), list(scores)
+
+def get_overall_sentiment(selected_user, df):
+    labels, _ = get_sentiment_stats(selected_user, df)
+    counts = Counter(labels)
+    return {
+        'positive': counts.get('positive', 0),
+        'neutral': counts.get('neutral', 0),
+        'negative': counts.get('negative', 0),
+    }
+
+def get_sentiment_timeline(selected_user, df):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    labels, scores = zip(*df['messages'].apply(analyze_sentiment))
+    temp = df.copy()
+    temp['sentiment_score'] = scores
+    return temp.groupby('date')['sentiment_score'].mean().reset_index()
+
+def get_user_sentiment_summary(df):
+    labels, scores = zip(*df['messages'].apply(analyze_sentiment))
+    temp = df.copy()
+    temp['sentiment_score'] = scores
+    return temp.groupby('user')['sentiment_score'].mean().sort_values(ascending=False).head(15)
+
+def get_extreme_messages(selected_user, df, n=5):
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+    labels, scores = zip(*df['messages'].apply(analyze_sentiment))
+    temp = df.copy()
+    temp['sentiment_score'] = scores
+    positive = temp.nlargest(n, 'sentiment_score')[['user', 'messages', 'sentiment_score']]
+    negative = temp.nsmallest(n, 'sentiment_score')[['user', 'messages', 'sentiment_score']]
+    return positive, negative
 
